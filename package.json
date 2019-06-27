@@ -1,0 +1,35 @@
+{
+  "name": "dope-stream",
+  "version": "0.0.0",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.esm.js",
+  "sideEffects": false,
+  "typings": "./dist",
+  "files": [
+    "package.json",
+    "dist/**"
+  ],
+  "scripts": {
+    "test": "jest",
+    "clean": "rm -rf dist; rm -rf .rpt2_cache",
+    "build": "yarn clean; rollup -c"
+  },
+  "dependencies": {
+    "through2": "3.0.1"
+  },
+  "devDependencies": {
+    "@types/jest": "24.0.12",
+    "@types/node": "12.0.0",
+    "@types/through2": "2.0.34",
+    "jest": "24.8.0",
+    "rollup": "1.12.5",
+    "rollup-plugin-size-snapshot": "0.9.0",
+    "rollup-plugin-terser": "5.0.0",
+    "rollup-plugin-typescript2": "0.21.1",
+    "ts-jest": "24.0.2",
+    "tslib": "1.9.3",
+    "ts-node": "8.2.0",
+    "typescript": "3.5.1"
+  }
+}
