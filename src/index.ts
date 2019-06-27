@@ -57,13 +57,31 @@ export class Pipe<Value> {
     throw new Error('unknow type pass to pipe')
   }
 
-  push(val: Value) {
-    this.src.write(val)
+  forEach(fn: (val: Value) => Promise<void>) {
+    this.src.pipe(
+      through2.obj(async function(data, enc, callback) {
+        await fn(data)
+        callback()
+      }),
+    )
+  }
+
+  push = (val: Value): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      this.src.write(val, (err: Error) => {
+        if (err) {
+          reject(err)
+          return
+        }
+        resolve()
+      })
+    })
   }
 }
 
 export class Source<T> {
   src: Readable
+
   constructor(src: Readable) {
     this.src = src
   }
@@ -106,5 +124,14 @@ export class Source<T> {
     }
 
     throw new Error('unknow type pass to pipe')
+  }
+
+  forEach(fn: (val: T) => Promise<void>) {
+    this.src.pipe(
+      through2.obj(async function(data, enc, callback) {
+        await fn(data)
+        callback()
+      }),
+    )
   }
 }

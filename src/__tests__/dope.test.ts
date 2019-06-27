@@ -22,6 +22,20 @@ class WritableBuffer extends Writable {
 }
 
 describe.only('testing streams', () => {
+  test('forEach', async (done) => {
+    const s = new Pipe<number>()
+
+    s.forEach(async (n) => {
+      console.log(n)
+    })
+
+    await s.push(1)
+    await s.push(2)
+
+    await delay(1000)
+
+    done()
+  })
   test("custom pipe's pump", async (done) => {
     const h = new Pipe<string>().map(async (val) => {
       return `##### ${val}`
@@ -43,9 +57,12 @@ describe.only('testing streams', () => {
       return `haha ${val}`
     })
       .pipe(writer2)
+      .on('end', () => console.log('finish'))
       .on('error', () => {})
 
-    p.push(1)
+    await p.push(1)
+    await p.push(1)
+    await p.push(1)
     await delay(2000)
 
     console.log(writer1.buff)
