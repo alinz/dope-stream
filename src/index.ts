@@ -34,7 +34,7 @@ export class Pipe<Value> {
       through2.obj(async function(data, _, callback) {
         const result = await fn(data)
         if (result) {
-          this.push(result)
+          this.push(data)
         }
         callback()
       }),
@@ -100,10 +100,10 @@ export class Source<T> {
 
   filter(fn: (val: T) => Promise<boolean>): Source<T> {
     const src = this.src.pipe(
-      through2.obj(async function(data, enc, callback) {
+      through2.obj(async function(data, _, callback) {
         const result = await fn(data)
         if (result) {
-          this.push(result)
+          this.push(data)
         }
         callback()
       }),
