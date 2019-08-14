@@ -1,72 +1,60 @@
-import { Writable } from 'stream'
+import { createPushPipe } from '~/src/index'
 
-import { Pipe, Source } from '~/src/index'
+describe('testing pipe', () => {
+  it('should work', async (done) => {
+    const p = createPushPipe<number>()
 
-const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
+    p.map(async (v) => {
+      return v + 1
+    }).forEach(async (val) => console.log(val))
 
-class WritableBuffer extends Writable {
-  buff: string[]
-  constructor() {
-    super()
-    this.buff = []
-  }
-
-  _write(chunk, encoding, callback) {
-    this.buff.push(chunk.toString())
-    callback()
-  }
-
-  get buffer() {
-    return this.buff.join('')
-  }
-}
-
-describe.only('testing streams', () => {
-  test('forEach', async (done) => {
-    const s = new Pipe<number>()
-
-    s.forEach(async (n) => {
-      console.log(n)
-    })
-
-    await s.push(1)
-    await s.push(2)
-
-    await delay(1000)
+    await p.push(1)
 
     done()
   })
-  test("custom pipe's pump", async (done) => {
-    const h = new Pipe<string>().map(async (val) => {
-      return `##### ${val}`
+
+  it('should work as chain', async (done) => {
+    const p1 = createPushPipe<string>()
+
+    p1.map(async (v) => {
+      return `p1: ${v}`
     })
 
-    const p = new Pipe<number>()
+    const p2 = createPushPipe<string>(p1)
+    p2.forEach(async (val) => {
+      console.log('received value from', val)
+    })
 
-    const writer1 = new WritableBuffer()
-    const writer2 = new WritableBuffer()
+    await p1.push('1')
+    await p2.push('2')
 
-    const p1 = p
-      .map(async (n) => {
-        return `hello ${n}`
+    done()
+  })
+
+  it('should capture fail mapper', async (done) => {
+    const badMapper = async (msg) => {
+      throw 'bad mapper'
+    }
+
+    const p = createPushPipe<number>()
+
+    p
+      //
+      .map(async (v) => {
+        return v + 1
       })
-      .pipe(h)
+      .map(badMapper)
+      .forEach(async (val) => console.log(val))
 
-    p1.pipe(writer1).on('error', () => {})
-    p1.map(async (val) => {
-      return `haha ${val}`
-    })
-      .pipe(writer2)
-      .on('end', () => console.log('finish'))
-      .on('error', () => {})
+    let err
 
-    await p.push(1)
-    await p.push(1)
-    await p.push(1)
-    await delay(2000)
+    try {
+      await p.push(1)
+    } catch (e) {
+      err = e
+    }
 
-    console.log(writer1.buff)
-    console.log(writer2.buff)
+    expect(err).toBe('bad mapper')
 
     done()
   })
