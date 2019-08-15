@@ -13,6 +13,20 @@ describe('testing pipe', () => {
     done()
   })
 
+  it('should work separate call', async (done) => {
+    const p = createPushPipe<number>()
+
+    p.map(async (val) => val + 1)
+    p.map(async (val) => val + 2)
+
+    p.forEach(async (val) => {
+      expect(val).toBe(4)
+      done()
+    })
+
+    await p.push(1)
+  })
+
   it('should work as chain', async (done) => {
     const p1 = createPushPipe<string>()
 
@@ -50,6 +64,28 @@ describe('testing pipe', () => {
 
     try {
       await p.push(1)
+    } catch (e) {
+      err = e
+    }
+
+    expect(err).toBe('bad mapper')
+
+    done()
+  })
+
+  it('should pass back exception to caller', async (done) => {
+    const badMapper = async (val: number) => {
+      throw 'bad mapper'
+    }
+
+    const p1 = createPushPipe<number>()
+
+    p1.map(badMapper)
+    p1.forEach(async (val) => console.log(val))
+
+    let err
+    try {
+      await p1.push(1)
     } catch (e) {
       err = e
     }
