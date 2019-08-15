@@ -41,6 +41,7 @@ type Chain = MapChain | FilterChain | ForEachChain
 class PipeImpl<V> implements Pipe<V> {
   chains: Chain[]
   parent: PipeImpl<any>
+  startPump: () => void
 
   constructor(parent: PipeImpl<any>) {
     this.chains = []
@@ -64,6 +65,10 @@ class PipeImpl<V> implements Pipe<V> {
     this.chains.push(chain)
     if (this.parent) {
       this.parent.addChain(chain)
+    }
+
+    if (this.startPump) {
+      this.startPump()
     }
 
     return true
@@ -146,14 +151,25 @@ class PushPipeImpl<Value> extends PipeImpl<Value> implements PushPipe<Value> {
 
 class SourceImpl<Value> extends PipeImpl<Value> {
   readable: Readable
+  isPumpStarted: boolean
 
   constructor(readable: Readable) {
     super(null)
     this.readable = readable
     this.readable.pause()
+    this.startPump = this.pump.bind(this)
   }
 
   pump() {
+    // NOTE: this condition is required to prevent calling this function multiple times
+    // WHY? because when addChain calls, the caller has no visibility whether pump has been
+    // called before or not. It is responsibility of object to protect pump function
+    if (this.isPumpStarted) {
+      return
+    }
+
+    this.isPumpStarted = true
+
     this.readable.pipe(
       through2.obj(async (data, _, callback) => {
         // using pause here to apply back pressure
@@ -165,19 +181,6 @@ class SourceImpl<Value> extends PipeImpl<Value> {
         callback()
       }),
     )
-
-    this.readable.resume()
-  }
-
-  forEach(fn: (val: Value) => Promise<void>): void {
-    const chain: ForEachChain = {
-      type: ChainType.FOREACH,
-      fn: fn,
-    }
-
-    if (this.addChain(chain)) {
-      this.pump()
-    }
   }
 }
 

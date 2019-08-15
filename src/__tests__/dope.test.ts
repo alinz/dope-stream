@@ -1,4 +1,9 @@
-import { createPushPipe } from '~/src/index'
+import through2 from 'through2'
+import { Readable } from 'stream'
+
+import { createPushPipe, createSourcePipe } from '~/src/index'
+
+const delay = (ms: number) => new Promise((res) => setTimeout(res, ms))
 
 describe('testing pipe', () => {
   it('should work', async (done) => {
@@ -93,5 +98,37 @@ describe('testing pipe', () => {
     expect(err).toBe('bad mapper')
 
     done()
+  })
+
+  it('should read readable stream', async (done) => {
+    class DummyReadable extends Readable {
+      constructor() {
+        super({
+          objectMode: true,
+          read: () => {
+            this.push({ data: new Date() })
+          },
+          highWaterMark: 10,
+        })
+      }
+    }
+
+    const source = new DummyReadable()
+    source.pause()
+
+    let count = 0
+
+    const p = createSourcePipe(source)
+    p.map(async (msg) => {
+      return msg
+    }).forEach(async (msg) => {
+      await delay(400)
+      if (count === 10) {
+        done()
+        return
+      }
+      count++
+      console.log(msg)
+    })
   })
 })
