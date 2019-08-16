@@ -24,14 +24,14 @@ const plugins = [
 const config = [
   {
     input: './src/index.ts',
-    output: { file: `dist/index.js`, format: 'cjs', esModule: false },
+    output: { file: `dist/index.js`, format: 'cjs', esModule: false, sourcemap: true, sourcemapFile: 'dist/index.js.map' },
     plugins,
     external: ['string_decoder'],
     onwarn,
   },
   {
     input: './src/index.ts',
-    output: { file: `dist/index.esm.js`, format: 'esm' },
+    output: { file: `dist/index.esm.js`, format: 'esm', sourcemap: true, sourcemapFile: 'dist/index.esm.js.map' },
     plugins,
     external: ['string_decoder'],
     onwarn,
